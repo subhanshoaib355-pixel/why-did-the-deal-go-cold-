@@ -1,0 +1,92 @@
+[
+  {
+    "body": "Thanks for sending this over. Before we move forward, could we get a 10% discount? Budget is tight this quarter.",
+    "subject": "Re: Proposal",
+    "email_id": "E001",
+    "to": "sales@example.com",
+    "date": "2026-08-15",
+    "from": "contact01@example.com",
+    "deal_id": "D001"
+  },
+  {
+    "body": "Totally understand. Let me check with my manager on pricing and get back to you shortly.",
+    "subject": "Re: Proposal",
+    "email_id": "E002",
+    "to": "contact01@example.com",
+    "date": "2026-08-16",
+    "from": "sales@example.com",
+    "deal_id": "D001"
+  },
+  {
+    "body": "Hi Dana, just checking in on this, any update on your end?",
+    "subject": "Following up",
+    "email_id": "E003",
+    "to": "contact01@example.com",
+    "date": "2026-08-22",
+    "from": "sales@example.com",
+    "deal_id": "D001"
+  },
+  {
+    "body": "Good call yesterday. One thing, we're also looking at a couple of other vendors, want to be thorough.",
+    "subject": "Quick question",
+    "email_id": "E004",
+    "to": "sales@example.com",
+    "date": "2026-08-10",
+    "from": "contact02@example.com",
+    "deal_id": "D002"
+  },
+  {
+    "body": "Makes sense, happy to answer any comparison questions. Let me know what would help.",
+    "subject": "Re: Quick question",
+    "email_id": "E005",
+    "to": "contact02@example.com",
+    "date": "2026-08-11",
+    "from": "sales@example.com",
+    "deal_id": "D002"
+  },
+  {
+    "body": "Hi Marcus, wanted to see where things stand on your end, happy to hop on a call.",
+    "subject": "Checking in",
+    "email_id": "E006",
+    "to": "contact02@example.com",
+    "date": "2026-08-28",
+    "from": "sales@example.com",
+    "deal_id": "D002"
+  },
+  {
+    "body": "This looks good. Sending to our legal team this week for final review.",
+    "subject": "Re: Contract terms",
+    "email_id": "E007",
+    "to": "sales@example.com",
+    "date": "2026-09-01",
+    "from": "contact03@example.com",
+    "deal_id": "D003"
+  },
+  {
+    "body": "Great, let me know if legal has any questions, happy to jump on a call.",
+    "subject": "Re: Contract terms",
+    "email_id": "E008",
+    "to": "contact03@example.com",
+    "date": "2026-09-02",
+    "from": "sales@example.com",
+    "deal_id": "D003"
+  },
+  {
+    "body": "After reviewing, we've decided to go with another provider that better fits our current budget.",
+    "subject": "Re: Proposal",
+    "email_id": "E009",
+    "to": "sales@example.com",
+    "date": "2026-07-28",
+    "from": "contact04@example.com",
+    "deal_id": "D004"
+  },
+  {
+    "body": "Had to pause this internally, reallocating budget this quarter. Will circle back next quarter.",
+    "subject": "Re: Next steps",
+    "email_id": "E010",
+    "to": "sales@example.com",
+    "date": "2026-09-05",
+    "from": "contact06@example.com",
+    "deal_id": "D006"
+  }
+]

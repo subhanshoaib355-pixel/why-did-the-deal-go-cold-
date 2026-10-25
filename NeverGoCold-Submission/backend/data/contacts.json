@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Alex Morgan 01",
+    "company": "Example Company 01",
+    "contact_id": "C001",
+    "email": "contact01@example.com",
+    "role": "Operations Director"
+  },
+  {
+    "name": "Alex Morgan 02",
+    "company": "Example Company 02",
+    "contact_id": "C002",
+    "email": "contact02@example.com",
+    "role": "Head of Procurement"
+  },
+  {
+    "name": "Alex Morgan 03",
+    "company": "Example Company 03",
+    "contact_id": "C003",
+    "email": "contact03@example.com",
+    "role": "Managing Partner"
+  },
+  {
+    "name": "Alex Morgan 04",
+    "company": "Example Company 04",
+    "contact_id": "C004",
+    "email": "contact04@example.com",
+    "role": "Plant Manager"
+  },
+  {
+    "name": "Alex Morgan 05",
+    "company": "Example Company 05",
+    "contact_id": "C005",
+    "email": "contact05@example.com",
+    "role": "Marketing Lead"
+  },
+  {
+    "name": "Alex Morgan 06",
+    "company": "Example Company 06",
+    "contact_id": "C006",
+    "email": "contact06@example.com",
+    "role": "CEO"
+  },
+  {
+    "name": "Alex Morgan 07",
+    "company": "Example Company 07",
+    "contact_id": "C007",
+    "email": "contact07@example.com",
+    "role": "Project Lead"
+  },
+  {
+    "name": "Alex Morgan 08",
+    "company": "Example Company 08",
+    "contact_id": "C008",
+    "email": "contact08@example.com",
+    "role": "VP Sales"
+  }
+]

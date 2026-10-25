@@ -1,0 +1,50 @@
+[
+  {
+    "note_id": "N001",
+    "deal_id": "D001",
+    "date": "2026-08-05",
+    "summary": "Very keen, wants to start next quarter if budget allows. No concerns raised about price."
+  },
+  {
+    "note_id": "N002",
+    "deal_id": "D001",
+    "date": "2026-08-20",
+    "summary": "Left voicemail, no response yet."
+  },
+  {
+    "note_id": "N003",
+    "deal_id": "D002",
+    "date": "2026-08-09",
+    "summary": "Good energy on call. Mentioned they're also evaluating a competitor, wants a clear comparison."
+  },
+  {
+    "note_id": "N004",
+    "deal_id": "D002",
+    "date": "2026-08-25",
+    "summary": "No answer, sent follow-up email instead."
+  },
+  {
+    "note_id": "N005",
+    "deal_id": "D003",
+    "date": "2026-08-30",
+    "summary": "Ready to sign pending legal review. Very positive tone, asked about onboarding timeline."
+  },
+  {
+    "note_id": "N006",
+    "deal_id": "D006",
+    "date": "2026-08-25",
+    "summary": "Positive call, excited about the proposal, said decision expected within two weeks."
+  },
+  {
+    "note_id": "N007",
+    "deal_id": "D007",
+    "date": "2026-07-20",
+    "summary": "Signed contract, kickoff scheduled for next month."
+  },
+  {
+    "note_id": "N008",
+    "deal_id": "D008",
+    "date": "2026-08-19",
+    "summary": "Asked detailed questions about integration support. Said they'd discuss internally."
+  }
+]
