@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeverGoCold — AI Sales Agent Dashboard</title>
+  <meta name="description" content="NeverGoCold is an AI-powered sales agent that monitors your pipeline, detects cold leads, and automatically sends personalized follow-ups to recover deals." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f9fc;
+      --surface: #ffffff;
+      --surface-2: #f1f3f9;
+      --border: #e5e7f0;
+      --border-light: #eef0f8;
+      --text-primary: #0f1117;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --accent: #4f46e5;
+      --accent-light: #eef2ff;
+      --accent-hover: #4338ca;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-light: #fffbeb;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --frozen: #6366f1;
+      --frozen-light: #eef2ff;
+      --cold: #f97316;
+      --cold-light: #fff7ed;
+      --warm: #eab308;
+      --warm-light: #fefce8;
+      --hot: #22c55e;
+      --hot-light: #f0fdf4;
+      --sidebar-w: 240px;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .logo-text { font-weight: 700; font-size: 15px; color: var(--text-primary); letter-spacing: -0.3px; }
+
+    .logo-badge {
+      font-size: 10px; font-weight: 600; color: var(--accent);
+      background: var(--accent-light); padding: 1px 6px; border-radius: 20px; margin-left: 2px;
+    }
+
+    .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+
+    .nav-section-label {
+      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.6px; padding: 10px 10px 6px;
+    }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 13.5px;
+      font-weight: 500; cursor: pointer; transition: all 0.15s; margin-bottom: 1px;
+    }
+
+    .nav-item:hover { background: var(--surface-2); color: var(--text-primary); }
+    .nav-item.active { background: var(--accent-light); color: var(--accent); }
+    .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .nav-badge {
+      margin-left: auto; background: var(--danger); color: white; font-size: 10px;
+      font-weight: 700; padding: 1px 6px; border-radius: 20px; min-width: 20px; text-align: center;
+    }
+    .nav-badge.yellow { background: var(--warning); }
+    .nav-badge.green { background: var(--success); }
+
+    .sidebar-footer { padding: 12px; border-top: 1px solid var(--border-light); }
+
+    .agent-status {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      background: var(--success-light); border-radius: var(--radius-sm); border: 1px solid #bbf7d0;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px; background: var(--success); border-radius: 50%; flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.2); animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
+      50% { box-shadow: 0 0 0 6px rgba(16,185,129,0.1); }
+    }
+
+    .status-text { font-size: 12px; font-weight: 600; color: #065f46; }
+    .status-sub { font-size: 11px; color: #34d399; }
+
+    /* MAIN */
+    .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+    .topbar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 58px; display: flex; align-items: center; gap: 16px;
+      position: sticky; top: 0; z-index: 50;
+    }
+
+    .topbar-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .topbar-sub { font-size: 13px; color: var(--text-muted); }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+      border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; border: none; font-family: inherit;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--surface-2); color: var(--text-primary); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); padding: 7px 10px; }
+    .btn-ghost:hover { background: var(--surface-2); color: var(--text-primary); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    .avatar {
+      width: 32px; height: 32px; background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+    }
+
+    .page-content { padding: 28px; flex: 1; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* KPI */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+
+    .kpi-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px 22px; box-shadow: var(--shadow-sm); transition: box-shadow 0.2s;
+    }
+    .kpi-card:hover { box-shadow: var(--shadow); }
+
+    .kpi-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .kpi-value { font-size: 30px; font-weight: 800; color: var(--text-primary); letter-spacing: -1px; line-height: 1; margin-bottom: 8px; }
+    .kpi-change { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+    .kpi-change.up { color: var(--success); }
+    .kpi-change.down { color: var(--danger); }
+
+    .kpi-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 340px; gap: 20px; margin-bottom: 24px; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    }
+
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px 14px; border-bottom: 1px solid var(--border-light);
+    }
+
+    .card-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .card-body { padding: 18px 22px; }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 600;
+    }
+    .badge-hot { background: var(--hot-light); color: #15803d; }
+    .badge-warm { background: var(--warm-light); color: #92400e; }
+    .badge-cold { background: var(--cold-light); color: #9a3412; }
+    .badge-frozen { background: var(--frozen-light); color: #3730a3; }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .badge-hot .badge-dot { background: var(--hot); }
+    .badge-warm .badge-dot { background: var(--warm); }
+    .badge-cold .badge-dot { background: var(--cold); }
+    .badge-frozen .badge-dot { background: var(--frozen); }
+    .badge-stage { background: var(--surface-2); color: var(--text-secondary); padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 500; }
+
+    /* ACTIVITY FEED */
+    .activity-list { list-style: none; }
+    .activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .activity-text { flex: 1; }
+    .activity-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+    .activity-sub { font-size: 12px; color: var(--text-muted); }
+    .activity-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; margin-top: 2px; }
+
+    /* LEADS TABLE */
+    .leads-toolbar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 22px; border-bottom: 1px solid var(--border-light); flex-wrap: wrap;
+    }
+
+    .search-input {
+      display: flex; align-items: center; gap: 8px; background: var(--surface-2);
+      border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 12px;
+      flex: 1; min-width: 200px;
+    }
+
+    .search-input input {
+      border: none; background: transparent; outline: none; font-family: inherit;
+      font-size: 13px; color: var(--text-primary); width: 100%;
+    }
+    .search-input input::placeholder { color: var(--text-muted); }
+
+    .filter-pills { display: flex; gap: 6px; }
+
+    .filter-pill {
+      padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      cursor: pointer; border: 1px solid var(--border); background: var(--surface);
+      color: var(--text-secondary); transition: all 0.15s;
+    }
+    .filter-pill.active, .filter-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .filter-pill.hot.active { border-color: var(--hot); color: #15803d; background: var(--hot-light); }
+    .filter-pill.warm.active { border-color: var(--warm); color: #92400e; background: var(--warm-light); }
+    .filter-pill.cold.active { border-color: var(--cold); color: #9a3412; background: var(--cold-light); }
+    .filter-pill.frozen.active { border-color: var(--frozen); color: #3730a3; background: var(--frozen-light); }
+
+    .leads-table { width: 100%; border-collapse: collapse; }
+    .leads-table th {
+      text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 600;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+      background: var(--surface-2); border-bottom: 1px solid var(--border);
+    }
+    .leads-table td { padding: 13px 16px; border-bottom: 1px solid var(--border-light); font-size: 13.5px; vertical-align: middle; }
+    .leads-table tr:last-child td { border-bottom: none; }
+    .leads-table tbody tr { cursor: pointer; transition: background 0.12s; }
+    .leads-table tbody tr:hover { background: #f8f9ff; }
+
+    .lead-name { font-weight: 600; color: var(--text-primary); }
+    .lead-company { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+    .days-silent { font-weight: 600; font-size: 13px; }
+    .days-silent.critical { color: var(--danger); }
+    .days-silent.warning { color: var(--warning); }
+    .days-silent.ok { color: var(--success); }
+
+    .agent-status-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 500; }
+    .agent-monitoring { background: #f0f9ff; color: #0369a1; }
+    .agent-drafted { background: #fef3c7; color: #92400e; }
+    .agent-sent { background: #f0fdf4; color: #15803d; }
+
+    /* DETAIL PANEL */
+    .detail-panel {
+      position: fixed; top: 0; right: 0; bottom: 0; width: 480px;
+      background: var(--surface); border-left: 1px solid var(--border);
+      box-shadow: var(--shadow-lg); z-index: 200;
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden;
+    }
+    .detail-panel.open { transform: translateX(0); }
+
+    .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+    .panel-close { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+    .panel-close:hover { background: var(--surface-2); color: var(--text-primary); }
+    .panel-body { flex: 1; overflow-y: auto; }
+    .panel-section { padding: 18px 22px; border-bottom: 1px solid var(--border-light); }
+    .panel-section-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .info-item label { font-size: 11px; color: var(--text-muted); font-weight: 500; display: block; margin-bottom: 3px; }
+    .info-item span { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+
+    .reasoning-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 12px; }
+    .reasoning-box .rb-title { font-size: 12px; font-weight: 700; color: #92400e; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .reasoning-box p { font-size: 12.5px; color: #78350f; line-height: 1.6; }
+
+    .message-box {
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 14px 16px; font-size: 13px; color: var(--text-primary); line-height: 1.7;
+      min-height: 120px; outline: none; width: 100%; font-family: inherit; resize: vertical; transition: border-color 0.15s;
+    }
+    .message-box:focus { border-color: var(--accent); background: var(--surface); }
+
+    .panel-actions { display: flex; gap: 8px; padding: 16px 22px; border-top: 1px solid var(--border); background: var(--surface); flex-wrap: wrap; }
+
+    /* TIMELINE */
+    .timeline { list-style: none; }
+    .timeline-item { display: flex; gap: 12px; padding: 10px 0; position: relative; }
+    .timeline-item::before { content: ''; position: absolute; left: 15px; top: 36px; bottom: -4px; width: 1px; background: var(--border); }
+    .timeline-item:last-child::before { display: none; }
+    .tl-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid var(--border); background: var(--surface); }
+    .tl-content { flex: 1; }
+    .tl-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+    .tl-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .tl-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+    /* LOG */
+    .log-list { list-style: none; }
+    .log-item { display: flex; gap: 14px; padding: 14px 22px; border-bottom: 1px solid var(--border-light); transition: background 0.12s; }
+    .log-item:hover { background: var(--surface-2); }
+    .log-badge { padding: 2px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 600; white-space: nowrap; flex-shrink: 0; height: fit-content; margin-top: 2px; }
+    .log-detected { background: #fef3c7; color: #92400e; }
+    .log-drafted { background: var(--accent-light); color: var(--accent); }
+    .log-sent { background: var(--success-light); color: #065f46; }
+    .log-enriched { background: #f3e8ff; color: #7e22ce; }
+    .log-recovered { background: var(--success-light); color: #065f46; }
+    .log-skipped { background: var(--surface-2); color: var(--text-muted); }
+    .log-content { flex: 1; }
+    .log-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 3px; }
+    .log-sub { font-size: 12px; color: var(--text-muted); }
+    .log-meta { font-size: 11px; color: var(--text-muted); text-align: right; white-space: nowrap; margin-top: 2px; }
+
+    /* SETTINGS */
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 860px; }
+    .settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); }
+    .settings-card.full { grid-column: 1 / -1; }
+    .settings-card-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .settings-card-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; }
+    .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
+    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .setting-label { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+    .setting-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 24px; cursor: pointer; transition: 0.2s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; box-shadow: var(--shadow-sm); }
+    .toggle input:checked + .toggle-slider { background: var(--accent); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    .range-input { width: 100%; appearance: none; height: 4px; background: var(--border); border-radius: 2px; outline: none; margin-top: 8px; }
+    .range-input::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: var(--shadow-sm); }
+
+    .tone-selector { display: flex; gap: 8px; margin-top: 6px; }
+    .tone-btn { flex: 1; padding: 8px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--surface); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.15s; color: var(--text-secondary); }
+    .tone-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--text-primary); color: white; padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow-lg); z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    .chart-container { position: relative; height: 180px; }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #c8cad8; }
+
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 150; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    .overlay.show { opacity: 1; pointer-events: all; }
+
+    /* AI CHAT WORKSPACE */
+    .chat-launcher {
+      position: fixed; right: 24px; bottom: 24px; z-index: 300;
+      width: 54px; height: 54px; border: 0; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: white; background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      box-shadow: 0 8px 24px rgba(79,70,229,0.32); cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .chat-launcher:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(79,70,229,0.4); }
+    .chat-panel {
+      --chat-bg: #080f1b;
+      --chat-panel: #0d1726;
+      --chat-card: #111d2d;
+      --chat-border: #233248;
+      --chat-text: #e7edf7;
+      --chat-muted: #94a3b8;
+      position: fixed; inset: 0; z-index: 400; display: flex; overflow: hidden;
+      color: var(--chat-text); background: var(--chat-bg);
+      opacity: 0; visibility: hidden; transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+    }
+    .chat-panel.open { opacity: 1; visibility: visible; transform: translateY(0); }
+    .chat-sidebar {
+      width: 258px; flex: 0 0 258px; display: flex; flex-direction: column;
+      padding: 16px 12px 12px; background: #09111e; border-right: 1px solid var(--chat-border);
+    }
+    .chat-brand { display: flex; align-items: center; gap: 10px; padding: 2px 5px 20px; }
+    .chat-brand-mark { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: #c4b5fd; background: #211c42; border: 1px solid #393064; border-radius: 9px; }
+    .chat-brand-name { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+    .chat-agent-pill { margin-left: auto; padding: 4px 7px; border: 1px solid var(--chat-border); border-radius: 16px; color: #c4b5fd; font-size: 10px; white-space: nowrap; }
+    .chat-side-action {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 11px;
+      border: 1px solid transparent; border-radius: 9px; color: #cbd5e1; background: transparent;
+      font: 500 12.5px/1.4 'Inter', system-ui, sans-serif; text-align: left; cursor: pointer;
+    }
+    .chat-side-action:hover, .chat-side-action.selected { color: #a99bff; background: #151d30; border-color: #222d46; }
+    .chat-nav-divider { height: 1px; margin: 12px 4px 8px; background: var(--chat-border); }
+    .chat-side-action.nav-link { margin: 1px 0; }
+    .chat-history-label { padding: 22px 10px 8px; color: #74839a; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
+    .chat-history-item { width: 100%; padding: 9px 10px; border: 0; border-radius: 8px; color: #cbd5e1; background: #141e2d; font: 12px/1.4 'Inter', system-ui, sans-serif; text-align: left; cursor: pointer; }
+    .chat-history-item:hover { background: #1a2638; }
+    .chat-demo-note { display: flex; gap: 10px; margin-top: auto; padding: 12px; border: 1px solid var(--chat-border); border-radius: 10px; color: #b8c4d6; font-size: 11px; line-height: 1.5; }
+    .chat-demo-note i { color: #a78bfa; flex: 0 0 auto; }
+    .chat-account { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px; border: 1px solid var(--chat-border); border-radius: 10px; }
+    .chat-account-avatar { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #253146; color: white; font-size: 11px; font-weight: 700; }
+    .chat-account-name { font-size: 12px; font-weight: 600; }
+    .chat-account-role { margin-top: 1px; color: var(--chat-muted); font-size: 10px; }
+    .chat-workspace { display: flex; flex: 1; min-width: 0; flex-direction: column; }
+    .chat-topbar { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 0 22px; border-bottom: 1px solid var(--chat-border); }
+    .chat-top-avatar { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #383263; border-radius: 50%; color: #c4b5fd; background: #191632; }
+    .chat-title { font-size: 14px; font-weight: 650; }
+    .chat-status { display: inline-flex; align-items: center; gap: 7px; margin-top: 3px; color: var(--chat-muted); font-size: 11px; }
+    .chat-status .status-dot { width: 7px; height: 7px; background: #34d399; box-shadow: none; animation: none; }
+    .chat-top-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .chat-icon-button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid transparent; border-radius: 8px; color: #a9b5c7; background: transparent; cursor: pointer; }
+    .chat-icon-button:hover { border-color: var(--chat-border); background: #111d2d; color: white; }
+    .chat-close { border-color: var(--chat-border); }
+    .chat-main-scroll { flex: 1; overflow-y: auto; }
+    .chat-main-inner { width: min(100%, 1040px); margin: 0 auto; padding: 26px 20px 22px; }
+    .chat-messages { display: flex; flex-direction: column; gap: 14px; }
+    .chat-message { max-width: min(760px, 92%); padding: 12px 15px; border: 1px solid var(--chat-border); border-radius: 11px; color: var(--chat-text); background: var(--chat-panel); font-size: 12.5px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .chat-message.user { align-self: flex-end; max-width: 70%; border-color: #283b68; background: #14213d; }
+    .chat-message.assistant { align-self: flex-start; }
+    .chat-analysis { margin-top: 18px; }
+    .chat-analysis[hidden] { display: none; }
+    .chat-section-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .chat-section-heading h2 { font-size: 13px; font-weight: 650; }
+    .chat-section-meta { margin-left: auto; color: var(--chat-muted); font-size: 10.5px; }
+    .chat-evidence-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .chat-evidence-card { min-height: 132px; padding: 12px; border: 1px solid var(--chat-border); border-radius: 10px; background: linear-gradient(145deg, #111d2d, #0c1522); }
+    .chat-evidence-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+    .chat-evidence-icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; color: #bba7ff; background: #251d48; }
+    .chat-evidence-title { font-size: 11.5px; font-weight: 650; }
+    .chat-evidence-subtitle { margin-top: 2px; color: var(--chat-muted); font-size: 9.5px; }
+    .chat-evidence-copy { color: #c6d0df; font-size: 10.5px; line-height: 1.55; }
+    .chat-confidence { display: inline-flex; margin-top: 8px; padding: 3px 6px; border-radius: 12px; color: #a5c8ff; background: #172c50; font-size: 9px; }
+    .chat-relationship { margin-top: 12px; padding: 13px; border: 1px solid var(--chat-border); border-radius: 10px; background: linear-gradient(145deg, #101b2a, #0b1421); }
+    .chat-relationship-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .chat-relationship-head strong { font-size: 12px; font-weight: 650; }
+    .chat-relationship-chip { margin-left: auto; padding: 4px 8px; border: 1px solid #174b43; border-radius: 14px; color: #6ee7b7; background: #0d2929; font-size: 9.5px; }
+    .chat-flow { display: flex; align-items: stretch; gap: 8px; }
+    .chat-flow-node { flex: 1; min-width: 0; padding: 10px; border: 1px solid #344466; border-radius: 9px; background: #111d2d; }
+    .chat-flow-node:first-child, .chat-flow-node:last-child { border-color: #4a3b78; background: #19162e; }
+    .chat-flow-kind { margin-bottom: 5px; color: #98a8c0; font-size: 9px; }
+    .chat-flow-value { font-size: 10.5px; font-weight: 600; line-height: 1.4; }
+    .chat-flow-detail { margin-top: 3px; color: var(--chat-muted); font-size: 9.5px; }
+    .chat-flow-link { align-self: center; color: #8b7ef5; font-size: 15px; }
+    .chat-audit { margin-top: 12px; }
+    .chat-audit[hidden] { display: none; }
+    .chat-audit-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; list-style: none; }
+    .chat-audit-item { padding: 9px 10px; border: 1px solid var(--chat-border); border-radius: 8px; color: #cbd5e1; background: #0e1928; font-size: 10px; }
+    .chat-audit-time { display: block; margin-top: 3px; color: var(--chat-muted); font-size: 9px; }
+    .chat-audit-button { display: flex; align-items: center; gap: 8px; margin: 14px 0 0 auto; padding: 9px 13px; border: 0; border-radius: 8px; color: white; background: linear-gradient(100deg, #2563eb, #7045d8); font: 500 11px/1.4 'Inter', system-ui, sans-serif; cursor: pointer; }
+    .chat-audit-button:hover { filter: brightness(1.12); }
+    .chat-empty { padding: 18px; border: 1px dashed #334155; border-radius: 10px; color: var(--chat-muted); text-align: center; font-size: 11px; }
+    .chat-composer-wrap { padding: 12px 20px 16px; border-top: 1px solid var(--chat-border); background: #0a121f; }
+    .chat-form { display: flex; align-items: flex-end; gap: 9px; width: min(100%, 1000px); margin: 0 auto; }
+    .chat-input { flex: 1; min-width: 0; max-height: 100px; resize: none; padding: 11px 13px; border: 1px solid #2c3a4f; border-radius: 9px; color: var(--chat-text); background: #111d2d; font: 12px/1.45 'Inter', system-ui, sans-serif; outline: none; }
+    .chat-input::placeholder { color: #74839a; }
+    .chat-input:focus { border-color: #7165e8; }
+    .chat-send { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; border: 0; border-radius: 9px; color: white; background: #5548dc; cursor: pointer; }
+    .chat-send:hover { background: #6759ec; }
+    .chat-disclaimer { width: min(100%, 1000px); margin: 6px auto 0; color: #68778c; font-size: 9px; }
+
+    @media (max-width: 1200px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col { grid-template-columns: 1fr; }
+      .settings-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .chat-sidebar { width: 216px; flex-basis: 216px; }
+      .chat-evidence-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .chat-evidence-card:last-child { grid-column: 1 / -1; }
+    }
+    @media (max-width: 640px) {
+      .chat-sidebar { display: none; }
+      .chat-topbar { min-height: 58px; padding: 0 13px; }
+      .chat-main-inner { padding: 18px 12px; }
+      .chat-evidence-grid, .chat-audit-list { grid-template-columns: 1fr; }
+      .chat-evidence-card:last-child { grid-column: auto; }
+      .chat-flow { flex-direction: column; }
+      .chat-flow-link { align-self: center; transform: rotate(90deg); }
+      .chat-message.user { max-width: 90%; }
+      .chat-composer-wrap { padding: 10px 12px 12px; }
+      .chat-main-scroll { min-height: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">NeverGoCold <span class="logo-badge">AI</span></div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="navigate('dashboard', this)" id="nav-dashboard">
+      <i data-lucide="layout-dashboard" class="nav-icon"></i> Dashboard
+    </div>
+    <div class="nav-item" onclick="navigate('leads', this)" id="nav-leads">
+      <i data-lucide="users" class="nav-icon"></i> Leads Pipeline
+      <span class="nav-badge yellow" id="nav-leads-count">0</span>
+    </div>
+    <div class="nav-item" onclick="navigate('contacts', this)" id="nav-contacts">
+      <i data-lucide="contact-round" class="nav-icon"></i> Contacts
+    </div>
+    <div class="nav-section-label">Agent</div>
+    <div class="nav-item" onclick="navigate('log', this)" id="nav-log">
+      <i data-lucide="scroll-text" class="nav-icon"></i> Activity Log
+      <span class="nav-badge green" id="nav-log-count">0</span>
+    </div>
+    <div class="nav-item" onclick="navigate('settings', this)" id="nav-settings">
+      <i data-lucide="settings-2" class="nav-icon"></i> Agent Settings
+    </div>
+    <div class="nav-section-label">Account</div>
+    <div class="nav-item" onclick="navigate('insights', this)" id="nav-insights">
+      <i data-lucide="bar-chart-3" class="nav-icon"></i> Insights
+    </div>
+    <div class="nav-item">
+      <i data-lucide="plug-2" class="nav-icon"></i> Integrations
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="agent-status">
+      <div class="status-dot"></div>
+      <div>
+        <div class="status-text">Agent Active</div>
+        <div class="status-sub" id="status-sub">Loading deals</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<main class="main">
+  <header class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-sub" id="topbar-sub">Friday, Oct 24 · Good morning, Sarah 👋</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-secondary btn-sm" onclick="loadPipeline(false)">
+        <i data-lucide="refresh-cw" style="width:13px;height:13px"></i> Sync CRM
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="loadPipeline(true)">
+        <i data-lucide="zap" style="width:13px;height:13px"></i> Run Agent Now
+      </button>
+      <div class="avatar" title="Sarah Mitchell">SM</div>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    <!-- PAGE: DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#eef2ff;color:#4f46e5"><i data-lucide="users" style="width:18px;height:18px"></i></div>
+          <div class="kpi-label">Total Active Leads</div>
+          <div class="kpi-value" id="kpi-total">—</div>
+          <div class="kpi-change" id="kpi-total-note">Sample deals</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fff7ed;color:#f97316"><i data-lucide="thermometer" style="width:18px;height:18px"></i></div>
+          <div class="kpi-label">Leads Going Cold</div>
+          <div class="kpi-value" id="kpi-cold" style="color:#f97316">—</div>
+          <div class="kpi-change down" id="kpi-cold-note">Cold or frozen</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f0fdf4;color:#22c55e"><i data-lucide="send" style="width:18px;height:18px"></i></div>
+          <div class="kpi-label">Follow-ups Sent Today</div>
+          <div class="kpi-value" id="kpi-actions">—</div>
+          <div class="kpi-change" id="kpi-actions-note">Recommendations</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f0fdf4;color:#10b981"><i data-lucide="rotate-ccw" style="width:18px;height:18px"></i></div>
+          <div class="kpi-label">Recovery Rate</div>
+          <div class="kpi-value" id="kpi-won" style="color:#10b981">—</div>
+          <div class="kpi-change" id="kpi-won-note">Won deals</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Recent Agent Activity</div>
+              <div class="card-subtitle">Last 2 hours</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="navigate('log', document.getElementById('nav-log'))">View all</button>
+          </div>
+          <div class="card-body">
+            <ul class="activity-list" id="activity-list"></ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Pipeline Temperature</div>
+              <div class="card-subtitle" id="chart-subtitle">Loading deals</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-container"><canvas id="tempChart"></canvas></div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#22c55e"></div><span style="font-size:12.5px;color:var(--text-secondary)">Hot</span></div>
+                <span style="font-size:12.5px;font-weight:600" id="temp-hot">0 leads</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#eab308"></div><span style="font-size:12.5px;color:var(--text-secondary)">Warm</span></div>
+                <span style="font-size:12.5px;font-weight:600" id="temp-warm">0 leads</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#f97316"></div><span style="font-size:12.5px;color:var(--text-secondary)">Cold</span></div>
+                <span style="font-size:12.5px;font-weight:600" id="temp-cold">0 leads</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:#6366f1"></div><span style="font-size:12.5px;color:var(--text-secondary)">Frozen</span></div>
+                <span style="font-size:12.5px;font-weight:600" id="temp-frozen">0 leads</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- URGENT BANNER -->
+      <div class="card" style="border-color:#fee2e2;background:linear-gradient(135deg,#fff5f5,#fff)">
+        <div class="card-header" style="border-bottom-color:#fee2e2">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#fef2f2;color:#ef4444;display:flex;align-items:center;justify-content:center">
+              <i data-lucide="zap" style="width:16px;height:16px"></i>
+            </div>
+            <div>
+              <div class="card-title" id="urgent-title" style="color:#991b1b">Leads Need Your Attention</div>
+              <div class="card-subtitle">Agent is waiting for approval before sending</div>
+            </div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="navigate('leads', document.getElementById('nav-leads'))">Review Now →</button>
+        </div>
+        <div class="card-body" style="padding:14px 22px;">
+          <div id="urgent-cards" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: LEADS -->
+    <div class="page" id="page-leads">
+      <div class="card">
+        <div class="leads-toolbar">
+          <div class="search-input">
+            <i data-lucide="search" style="width:14px;height:14px;color:var(--text-muted);flex-shrink:0"></i>
+            <input type="text" id="lead-search" placeholder="Search leads, companies..." oninput="filterLeads()" />
+          </div>
+          <div class="filter-pills">
+            <div class="filter-pill active" onclick="setFilter('all', this)">All</div>
+            <div class="filter-pill hot" onclick="setFilter('hot', this)">🟢 Hot</div>
+            <div class="filter-pill warm" onclick="setFilter('warm', this)">🟡 Warm</div>
+            <div class="filter-pill cold" onclick="setFilter('cold', this)">🟠 Cold</div>
+            <div class="filter-pill frozen" onclick="setFilter('frozen', this)">🔵 Frozen</div>
+          </div>
+          <button class="btn btn-secondary btn-sm"><i data-lucide="sliders-horizontal" style="width:13px;height:13px"></i> Filters</button>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="showToast('Add lead form coming soon!')"><i data-lucide="plus" style="width:13px;height:13px"></i> Add Lead</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="leads-table" id="leads-table">
+            <thead>
+              <tr>
+                <th>Lead</th>
+                <th>Stage</th>
+                <th>Last Contact</th>
+                <th>Days Silent</th>
+                <th>Temperature</th>
+                <th>Agent Status</th>
+                <th>Next Action</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="leads-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: CONTACTS -->
+    <div class="page" id="page-contacts">
+      <div class="card">
+        <div class="leads-toolbar">
+          <div class="search-input">
+            <i data-lucide="search" style="width:14px;height:14px;color:var(--text-muted);flex-shrink:0"></i>
+            <input type="text" id="contact-search" placeholder="Search contacts, companies, email..." oninput="filterContacts()" />
+          </div>
+          <span class="card-subtitle">Contacts from your sample lead pipeline</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="leads-table">
+            <thead><tr><th>Contact</th><th>Company</th><th>Email</th><th>Deal Stage</th><th>Temperature</th></tr></thead>
+            <tbody id="contacts-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: LOG -->
+    <div class="page" id="page-log">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Agent Activity Log</div>
+            <div class="card-subtitle">All actions taken by the NeverGoCold agent</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('Downloading activity log CSV...')">
+            <i data-lucide="download" style="width:13px;height:13px"></i> Export CSV
+          </button>
+        </div>
+        <ul class="log-list" id="log-list"></ul>
+      </div>
+    </div>
+
+    <!-- PAGE: SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="settings-grid">
+        <div class="settings-card">
+          <div class="settings-card-title">Agent Behavior</div>
+          <div class="settings-card-sub">Control how the AI agent operates on your pipeline</div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Auto-Send Follow-ups</div>
+              <div class="setting-sub">Agent sends without manual approval</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="toggle-auto"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Enable Data Enrichment</div>
+              <div class="setting-sub">Pull LinkedIn, news, and firmographic data</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="toggle-enrich" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Weekend Pause</div>
+              <div class="setting-sub">Don't send follow-ups on Sat/Sun</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="toggle-weekend" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Smart Timing</div>
+              <div class="setting-sub">Send at best open-rate times per timezone</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="toggle-timing" checked><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-card-title">Cold Detection Thresholds</div>
+          <div class="settings-card-sub">When should leads be flagged as going cold?</div>
+          <div class="setting-row">
+            <div style="flex:1">
+              <div class="setting-label">Cold threshold: <strong id="cold-val">7</strong> days</div>
+              <div class="setting-sub">Lead marked "Cold" after X days of silence</div>
+              <input type="range" class="range-input" min="2" max="21" value="7" oninput="document.getElementById('cold-val').textContent=this.value">
+            </div>
+          </div>
+          <div class="setting-row">
+            <div style="flex:1">
+              <div class="setting-label">Frozen threshold: <strong id="frozen-val">14</strong> days</div>
+              <div class="setting-sub">Lead marked "Frozen" after X days of silence</div>
+              <input type="range" class="range-input" min="7" max="60" value="14" oninput="document.getElementById('frozen-val').textContent=this.value">
+            </div>
+          </div>
+          <div class="setting-row">
+            <div style="flex:1">
+              <div class="setting-label">Max follow-up attempts: <strong id="attempts-val">3</strong></div>
+              <div class="setting-sub">Agent stops after this many unanswered messages</div>
+              <input type="range" class="range-input" min="1" max="10" value="3" oninput="document.getElementById('attempts-val').textContent=this.value">
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-card full">
+          <div class="settings-card-title">Message Tone</div>
+          <div class="settings-card-sub">How should the AI write follow-up messages?</div>
+          <div class="tone-selector">
+            <button class="tone-btn active" onclick="selectTone(this)">🤝 Professional</button>
+            <button class="tone-btn" onclick="selectTone(this)">😊 Friendly</button>
+            <button class="tone-btn" onclick="selectTone(this)">⚡ Direct</button>
+            <button class="tone-btn" onclick="selectTone(this)">🎯 Consultative</button>
+            <button class="tone-btn" onclick="selectTone(this)">💼 Formal</button>
+          </div>
+        </div>
+
+        <div class="settings-card full">
+          <div class="settings-card-title">Integrations</div>
+          <div class="settings-card-sub">Connected tools and data sources</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #bbf7d0;border-radius:8px;background:#f0fdf4;flex:1;min-width:160px">
+              <div style="width:28px;height:28px;background:white;border-radius:6px;border:1px solid #d1fae5;display:flex;align-items:center;justify-content:center;font-size:14px">📧</div>
+              <div><div style="font-size:13px;font-weight:600">Gmail</div><div style="font-size:11px;color:#059669">Connected</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #bbf7d0;border-radius:8px;background:#f0fdf4;flex:1;min-width:160px">
+              <div style="width:28px;height:28px;background:white;border-radius:6px;border:1px solid #d1fae5;display:flex;align-items:center;justify-content:center;font-size:14px">💼</div>
+              <div><div style="font-size:13px;font-weight:600">HubSpot CRM</div><div style="font-size:11px;color:#059669">Connected</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #bbf7d0;border-radius:8px;background:#f0fdf4;flex:1;min-width:160px">
+              <div style="width:28px;height:28px;background:white;border-radius:6px;border:1px solid #d1fae5;display:flex;align-items:center;justify-content:center;font-size:14px">🔗</div>
+              <div><div style="font-size:13px;font-weight:600">LinkedIn Sales Nav</div><div style="font-size:11px;color:#059669">Connected</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);flex:1;min-width:160px;cursor:pointer" onclick="showToast('Slack integration coming soon!')">
+              <div style="width:28px;height:28px;background:white;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px">💬</div>
+              <div><div style="font-size:13px;font-weight:600">Slack</div><div style="font-size:11px;color:var(--text-muted)">Connect →</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: INSIGHTS -->
+    <div class="page" id="page-insights">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#eef2ff;color:#4f46e5"><i data-lucide="briefcase-business" style="width:18px;height:18px"></i></div>
+          <div class="kpi-label">Sample Deals</div>
+          <div class="kpi-value" id="insights-total">—</div>
+          <div class="kpi-change">Visible records in this demo</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fff7ed;color:#f97316"><i data-lucide="thermometer" style="width:18px;height:18px"></i></div>
+          <div class="kpi-label">Cold or Frozen</div>
+          <div class="kpi-value" id="insights-cold" style="color:#f97316">—</div>
+          <div class="kpi-change down">Need a timely review</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f0fdf4;color:#10b981"><i data-lucide="dollar-sign" style="width:18px;height:18px"></i></div>
+          <div class="kpi-label">At-risk Deal Value</div>
+          <div class="kpi-value" id="insights-value" style="color:#10b981">—</div>
+          <div class="kpi-change">Cold and frozen sample deals</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fefce8;color:#ca8a04"><i data-lucide="clock-3" style="width:18px;height:18px"></i></div>
+          <div class="kpi-label">Longest Silence</div>
+          <div class="kpi-value" id="insights-silence">—</div>
+          <div class="kpi-change" id="insights-silence-name">Across sample leads</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Leads to Review</div><div class="card-subtitle">Prioritized by days since last contact · sample records</div></div>
+        </div>
+        <ul class="log-list" id="insights-priorities"></ul>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- DETAIL PANEL -->
+<aside class="detail-panel" id="detail-panel">
+  <div class="panel-header">
+    <div>
+      <div class="card-title" id="panel-name">Lead Detail</div>
+      <div class="card-subtitle" id="panel-company"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="panel-temp-badge"></span>
+      <div class="panel-close" onclick="closePanel()"><i data-lucide="x" style="width:16px;height:16px"></i></div>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div class="panel-section">
+      <div class="panel-section-title">Lead Information</div>
+      <div class="info-grid">
+        <div class="info-item"><label>Email</label><span id="panel-email">—</span></div>
+        <div class="info-item"><label>Stage</label><span id="panel-stage">—</span></div>
+        <div class="info-item"><label>Last Contact</label><span id="panel-last">—</span></div>
+        <div class="info-item"><label>Days Silent</label><span id="panel-days" style="font-weight:700;color:var(--danger)">—</span></div>
+        <div class="info-item"><label>Deal Value</label><span id="panel-value">—</span></div>
+        <div class="info-item"><label>Agent Status</label><span id="panel-agent-status">—</span></div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">AI Agent Reasoning</div>
+      <div class="reasoning-box">
+        <div class="rb-title"><i data-lucide="brain" style="width:13px;height:13px"></i> Why this lead is going cold</div>
+        <p id="panel-reasoning-text">Loading...</p>
+      </div>
+      <div style="background:var(--accent-light);border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--accent);display:flex;align-items:center;gap:6px">
+        <i data-lucide="lightbulb" style="width:13px;height:13px;flex-shrink:0"></i>
+        <span id="panel-suggestion">Suggested next step loading...</span>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Generated Follow-up Message</span>
+        <button class="btn btn-ghost btn-sm" onclick="regenerateMessage()"><i data-lucide="refresh-cw" style="width:12px;height:12px"></i> Regenerate</button>
+      </div>
+      <textarea class="message-box" id="panel-message" rows="5"></textarea>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Interaction Timeline</div>
+      <ul class="timeline" id="panel-timeline"></ul>
+    </div>
+  </div>
+  <div class="panel-actions">
+    <button class="btn btn-success" onclick="approveAndSend()"><i data-lucide="send" style="width:14px;height:14px"></i> Approve & Send</button>
+    <button class="btn btn-secondary" onclick="showToast('Message saved for editing.')"><i data-lucide="pencil" style="width:14px;height:14px"></i> Edit</button>
+    <button class="btn btn-secondary" onclick="showToast('Lead skipped. Agent will retry tomorrow.')"><i data-lucide="skip-forward" style="width:14px;height:14px"></i> Skip</button>
+    <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="showToast('Lead marked as lost.')"><i data-lucide="x-circle" style="width:14px;height:14px"></i> Mark Lost</button>
+  </div>
+</aside>
+
+<section class="chat-panel" id="chat-panel" role="dialog" aria-label="NeverGoCold AI assistant" aria-hidden="true">
+  <aside class="chat-sidebar">
+    <div class="chat-brand">
+      <div class="chat-brand-mark"><i data-lucide="zap" style="width:17px;height:17px"></i></div>
+      <div class="chat-brand-name">NeverGoCold</div>
+      <span class="chat-agent-pill">✦ AI Agent</span>
+    </div>
+    <button class="chat-side-action" type="button" onclick="startNewChat()"><i data-lucide="message-circle" style="width:16px;height:16px"></i> New chat</button>
+    <div class="chat-side-action selected"><i data-lucide="messages-square" style="width:16px;height:16px"></i> Chat history</div>
+    <div class="chat-nav-divider"></div>
+    <button class="chat-side-action nav-link" type="button" onclick="navigateFromAssistant('leads')"><i data-lucide="briefcase-business" style="width:16px;height:16px"></i> Deals</button>
+    <button class="chat-side-action nav-link" type="button" onclick="navigateFromAssistant('contacts')"><i data-lucide="contact-round" style="width:16px;height:16px"></i> Contacts</button>
+    <button class="chat-side-action nav-link" type="button" onclick="navigateFromAssistant('insights')"><i data-lucide="chart-no-axes-column-increasing" style="width:16px;height:16px"></i> Insights</button>
+    <button class="chat-side-action nav-link" type="button" onclick="navigateFromAssistant('settings')"><i data-lucide="settings-2" style="width:16px;height:16px"></i> Settings</button>
+    <div class="chat-history-label">Recent analysis</div>
+    <div id="chat-history-list"></div>
+    <div class="chat-demo-note"><i data-lucide="flask-conical" style="width:17px;height:17px"></i><span>Demo mode<br>Insights use sample lead data.</span></div>
+    <div class="chat-account">
+      <div class="chat-account-avatar">SM</div>
+      <div><div class="chat-account-name">Sarah Mitchell</div><div class="chat-account-role">Sales workspace</div></div>
+    </div>
+  </aside>
+  <div class="chat-workspace">
+    <header class="chat-topbar">
+      <div class="chat-top-avatar"><i data-lucide="sparkles" style="width:17px;height:17px"></i></div>
+      <div>
+        <div class="chat-title">NeverGoCold AI Agent</div>
+        <div class="chat-status"><span class="status-dot"></span>Online · Pipeline assistant</div>
+      </div>
+      <div class="chat-top-actions">
+        <button class="chat-icon-button" type="button" aria-label="Start a new chat" title="New chat" onclick="startNewChat()"><i data-lucide="plus" style="width:17px;height:17px"></i></button>
+        <button class="chat-icon-button chat-close" type="button" aria-label="Close chat" title="Close" onclick="toggleChat(false)"><i data-lucide="x" style="width:17px;height:17px"></i></button>
+      </div>
+    </header>
+    <div class="chat-main-scroll" id="chat-main-scroll">
+      <div class="chat-main-inner">
+        <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
+        <section class="chat-analysis" id="chat-analysis" aria-label="Lead evidence and relationship" hidden>
+          <div class="chat-section-heading">
+            <i data-lucide="scan-search" style="width:15px;height:15px;color:#a78bfa"></i>
+            <h2>Top evidence</h2>
+            <span class="chat-section-meta" id="chat-evidence-count">Supporting lead signals</span>
+          </div>
+          <div class="chat-evidence-grid" id="chat-evidence"></div>
+          <div class="chat-relationship">
+            <div class="chat-relationship-head">
+              <i data-lucide="workflow" style="width:15px;height:15px;color:#a78bfa"></i>
+              <strong id="chat-relationship-title">Lead relationship &amp; touchpoints</strong>
+              <span class="chat-relationship-chip" id="chat-relationship-chip"></span>
+            </div>
+            <div class="chat-flow" id="chat-flow"></div>
+          </div>
+          <div class="chat-audit" id="chat-audit" hidden>
+            <ul class="chat-audit-list" id="chat-audit-list"></ul>
+          </div>
+          <button class="chat-audit-button" id="chat-audit-button" type="button" onclick="toggleChatAudit()">
+            <i data-lucide="list" style="width:15px;height:15px"></i><span>Show interaction timeline</span><i data-lucide="arrow-right" style="width:14px;height:14px"></i>
+          </button>
+        </section>
+      </div>
+    </div>
+    <div class="chat-composer-wrap">
+      <form class="chat-form" onsubmit="submitChat(event)">
+        <textarea class="chat-input" id="chat-input" rows="1" aria-label="Message the assistant" placeholder="Ask why a lead is going cold..."></textarea>
+        <button class="chat-send" type="submit" aria-label="Send message"><i data-lucide="send" style="width:16px;height:16px"></i></button>
+      </form>
+      <div class="chat-disclaimer">Demo assistant · Responses are generated from the sample dashboard data.</div>
+    </div>
+  </div>
+</section>
+<button class="chat-launcher" id="chat-launcher" type="button" aria-label="Open AI assistant" aria-expanded="false" onclick="toggleChat()">
+  <i data-lucide="message-circle" style="width:23px;height:23px"></i>
+</button>
+
+<div class="toast" id="toast">
+  <i data-lucide="check-circle" style="width:16px;height:16px;color:#4ade80;flex-shrink:0"></i>
+  <span id="toast-msg"></span>
+</div>
+
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script>
+let activeFilter = 'all';
+let currentLead = null;
+let toastTimer = null;
+const chatHistory = [];
+
+function navigate(page, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const titles = {
+    dashboard: ['Dashboard', 'Friday, Oct 24 · Good morning, Sarah 👋'],
+    leads: ['Leads Pipeline', '47 active leads across all stages'],
+    contacts: ['Contacts', 'People in your sample lead pipeline'],
+    log: ['Agent Activity Log', 'Everything NeverGoCold did today'],
+    insights: ['Pipeline Insights', 'Prioritized signals from sample lead records'],
+    settings: ['Agent Settings', 'Configure how the agent behaves'],
+  };
+  if (titles[page]) {
+    document.getElementById('topbar-title').textContent = titles[page][0];
+    document.getElementById('topbar-sub').textContent = titles[page][1];
+  }
+  closePanel();
+}
+
+function navigateFromAssistant(page) {
+  const navItem = document.getElementById(`nav-${page}`);
+  const pageElement = document.getElementById(`page-${page}`);
+  if (!navItem || !pageElement) return;
+  toggleChat(false);
+  navigate(page, navItem);
+}
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+}
+
+function renderLeads(data) {
+  const tbody = document.getElementById('leads-tbody');
+  tbody.innerHTML = '';
+  if (!data.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 8;
+    td.textContent = pipelineError ? `Could not load deals. ${pipelineError}` : pipelineLoading ? 'Loading deals...' : 'No deals returned.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  data.forEach(lead => {
+    const dayClass = lead.daysSilent >= 14 ? 'critical' : lead.daysSilent >= 7 ? 'warning' : 'ok';
+    const agentClass = { monitoring:'agent-monitoring', drafted:'agent-drafted', sent:'agent-sent' }[lead.agentStatus];
+    const agentLabel = { monitoring:'Monitoring', drafted:'✦ Draft Ready', sent:'Follow-up Sent' }[lead.agentStatus];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><div class="lead-name">${esc(lead.name)}</div><div class="lead-company">${esc(lead.company)}</div></td>
+      <td><span class="badge-stage">${esc(lead.stage)}</span></td>
+      <td style="color:var(--text-secondary)">${esc(lead.lastContact)}</td>
+      <td><span class="days-silent ${dayClass}">${lead.daysSilent}d</span></td>
+      <td><span class="badge badge-${esc(lead.temp)}"><span class="badge-dot"></span>${esc(lead.temp.charAt(0).toUpperCase()+lead.temp.slice(1))}</span></td>
+      <td><span class="agent-status-chip ${agentClass}">${agentLabel}</span></td>
+      <td style="color:var(--text-secondary);font-size:12px">${esc(lead.nextAction)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openLead('${lead.id}');event.stopPropagation()"><i data-lucide="chevron-right" style="width:14px;height:14px"></i></button></td>
+    `;
+    tr.onclick = () => openLead(lead.id);
+    tbody.appendChild(tr);
+  });
+  lucide.createIcons();
+}
+
+function renderContacts(data) {
+  const tbody = document.getElementById('contacts-tbody');
+  tbody.replaceChildren();
+  data.forEach(lead => {
+    const row = document.createElement('tr');
+    row.setAttribute('tabindex', '0');
+    row.setAttribute('aria-label', `Open ${lead.name} contact details`);
+    row.addEventListener('click', () => openLead(lead.id));
+    row.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openLead(lead.id);
+      }
+    });
+    const contact = document.createElement('td');
+    const name = document.createElement('div');
+    name.className = 'lead-name';
+    name.textContent = lead.name;
+    const status = document.createElement('div');
+    status.className = 'lead-company';
+    status.textContent = lead.agentStatus === 'drafted' ? 'Follow-up draft ready' : 'In lead pipeline';
+    contact.append(name, status);
+    const company = document.createElement('td');
+    company.textContent = lead.company;
+    const email = document.createElement('td');
+    email.textContent = lead.email;
+    const stage = document.createElement('td');
+    const stageBadge = document.createElement('span');
+    stageBadge.className = 'badge-stage';
+    stageBadge.textContent = lead.stage;
+    stage.appendChild(stageBadge);
+    const temperature = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = `badge badge-${lead.temp}`;
+    const dot = document.createElement('span');
+    dot.className = 'badge-dot';
+    badge.append(dot, document.createTextNode(`${lead.temp.charAt(0).toUpperCase()}${lead.temp.slice(1)}`));
+    temperature.appendChild(badge);
+    row.append(contact, company, email, stage, temperature);
+    tbody.appendChild(row);
+  });
+  lucide.createIcons();
+}
+
+function filterContacts() {
+  const query = document.getElementById('contact-search').value.trim().toLowerCase();
+  renderContacts(leads.filter(lead =>
+    lead.name.toLowerCase().includes(query) ||
+    lead.company.toLowerCase().includes(query) ||
+    lead.email.toLowerCase().includes(query)
+  ));
+}
+
+function renderInsights() {
+  const atRisk = leads.filter(lead => lead.temp === 'cold' || lead.temp === 'frozen')
+    .sort((a, b) => b.daysSilent - a.daysSilent);
+  const numericValues = atRisk.map(lead => lead.value ? Number(String(lead.value).replace(/[$,]/g, '')) : NaN).filter(Number.isFinite);
+  const atRiskValue = numericValues.reduce((total, value) => total + value, 0);
+  const longestSilent = atRisk[0];
+  document.getElementById('insights-total').textContent = leads.length;
+  document.getElementById('insights-cold').textContent = atRisk.length;
+  document.getElementById('insights-value').textContent = numericValues.length
+    ? atRiskValue.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+    : 'n/a';
+  document.getElementById('insights-silence').textContent = longestSilent ? `${longestSilent.daysSilent} days` : '0 days';
+  document.getElementById('insights-silence-name').textContent = longestSilent ? `${longestSilent.name} · ${longestSilent.company}` : 'No cold deals';
+  const list = document.getElementById('insights-priorities');
+  list.replaceChildren();
+  atRisk.forEach(lead => {
+    const item = document.createElement('li');
+    item.className = 'log-item';
+    item.tabIndex = 0;
+    item.setAttribute('aria-label', `Open ${lead.name} lead details`);
+    item.addEventListener('click', () => openLead(lead.id));
+    item.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openLead(lead.id);
+      }
+    });
+    const badge = document.createElement('span');
+    badge.className = `log-badge ${lead.temp === 'frozen' ? 'log-detected' : 'log-drafted'}`;
+    badge.textContent = lead.temp;
+    const content = document.createElement('div');
+    content.className = 'log-content';
+    const title = document.createElement('div');
+    title.className = 'log-title';
+    title.textContent = `${lead.name} · ${lead.company}`;
+    const detail = document.createElement('div');
+    detail.className = 'log-sub';
+    detail.textContent = `${lead.daysSilent} days silent · ${lead.stage} · ${lead.value}`;
+    content.append(title, detail);
+    const action = document.createElement('div');
+    action.className = 'log-meta';
+    action.textContent = lead.nextAction;
+    item.append(badge, content, action);
+    list.appendChild(item);
+  });
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  filterLeads();
+}
+
+function filterLeads() {
+  const q = (document.getElementById('lead-search').value || '').toLowerCase();
+  let filtered = leads;
+  if (activeFilter !== 'all') filtered = filtered.filter(l => l.temp === activeFilter);
+  if (q) filtered = filtered.filter(l => l.name.toLowerCase().includes(q) || l.company.toLowerCase().includes(q));
+  renderLeads(filtered);
+}
+
+function openLead(id) {
+  currentLead = leads.find(l => l.id === id);
+  if (!currentLead) return;
+  const l = currentLead;
+  document.getElementById('panel-name').textContent = l.name;
+  document.getElementById('panel-company').textContent = l.company;
+  document.getElementById('panel-email').textContent = l.email;
+  document.getElementById('panel-stage').textContent = l.stage;
+  document.getElementById('panel-last').textContent = l.lastContact;
+  document.getElementById('panel-days').textContent = l.daysSilent + ' days';
+  document.getElementById('panel-value').textContent = l.value;
+  document.getElementById('panel-reasoning-text').textContent = l.reasoning;
+  document.getElementById('panel-suggestion').textContent = '→ ' + l.suggestion;
+  document.getElementById('panel-message').value = l.message;
+  document.getElementById('panel-agent-status').textContent = { monitoring:'Monitoring', drafted:'Draft Ready', sent:'Sent' }[l.agentStatus] || l.agentStatus;
+  const badge = document.getElementById('panel-temp-badge');
+  badge.className = `badge badge-${l.temp}`;
+  badge.innerHTML = `<span class="badge-dot"></span>${l.temp.charAt(0).toUpperCase()+l.temp.slice(1)}`;
+  const tl = document.getElementById('panel-timeline');
+  tl.innerHTML = l.timeline.map(t => `
+    <li class="timeline-item">
+      <div class="tl-icon" style="border-color:${t.bg};background:${t.bg}">
+        <i data-lucide="${t.icon}" style="width:12px;height:12px;color:${t.color}"></i>
+      </div>
+      <div class="tl-content">
+        <div class="tl-title">${t.title}</div>
+        <div class="tl-sub">${t.sub}</div>
+      </div>
+      <div class="tl-time">${t.time}</div>
+    </li>
+  `).join('');
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  lucide.createIcons();
+}
+
+function closePanel() {
+  document.getElementById('detail-panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function approveAndSend() {
+  if (!currentLead) return;
+  showToast(`✓ Follow-up sent to ${currentLead.name} at ${currentLead.company}!`);
+  closePanel();
+}
+
+function regenerateMessage() {
+  showToast('Regenerating with AI...');
+  setTimeout(() => { document.getElementById('panel-message').value = document.getElementById('panel-message').value + '\n\n[AI regenerated — personalized with latest CRM data]'; }, 800);
+}
+
+function renderLog() {
+  const list = document.getElementById('log-list');
+  list.innerHTML = logEntries.map(e => `
+    <li class="log-item">
+      <span class="log-badge log-${e.type}">${e.badge}</span>
+      <div class="log-content">
+        <div class="log-title">${e.title}</div>
+        <div class="log-sub">${e.sub}</div>
+      </div>
+      <div>
+        <div class="log-meta">${e.date}</div>
+        <div class="log-meta">${e.time}</div>
+      </div>
+    </li>
+  `).join('');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function toggleChat(forceOpen) {
+  const panel = document.getElementById('chat-panel');
+  const launcher = document.getElementById('chat-launcher');
+  const isOpen = forceOpen === undefined ? !panel.classList.contains('open') : forceOpen;
+  panel.classList.toggle('open', isOpen);
+  panel.setAttribute('aria-hidden', String(!isOpen));
+  launcher.setAttribute('aria-expanded', String(isOpen));
+  if (isOpen) document.getElementById('chat-input').focus();
+}
+
+function submitChat(event) {
+  event.preventDefault();
+  const input = document.getElementById('chat-input');
+  sendChatPrompt(input.value);
+}
+
+function appendChatMessage(role, text) {
+  const message = document.createElement('div');
+  message.className = `chat-message ${role}`;
+  message.textContent = text;
+  document.getElementById('chat-messages').appendChild(message);
+  return message;
+}
+
+async function sendChatPrompt(prompt) {
+  const text = prompt.trim();
+  if (!text) return;
+  appendChatMessage('user', text);
+  const input = document.getElementById('chat-input');
+  const sendButton = document.querySelector('.chat-send');
+  input.value = '';
+  input.disabled = true;
+  sendButton.disabled = true;
+  const pending = appendChatMessage('assistant', 'Checking the agent backend…');
+  document.getElementById('chat-analysis').hidden = true;
+  document.getElementById('chat-main-scroll').scrollTop = document.getElementById('chat-main-scroll').scrollHeight;
+  try {
+    const requestedLead = getMentionedChatLead(text, leads);
+    const result = await runAgentApi(requestedLead ? requestedLead.id : 'all', true);
+    const apiLeads = result.rows.map(mapDeal);
+    const mentionedLead = getMentionedChatLead(text, apiLeads);
+    const lead = mentionedLead || getChatLead(text, apiLeads);
+    const reply = getChatReply(text, apiLeads, mentionedLead);
+    const sentimentWarnings = [...new Set(apiLeads.map(lead => lead.sentimentWarning).filter(Boolean))];
+    pending.textContent = sentimentWarnings.length
+      ? `${reply}\n\nAgent notice: ${sentimentWarnings.join(' ')}`
+      : reply;
+    if (lead) renderChatAnalysis(lead);
+    chatHistory.push({ question: text, leadId: mentionedLead ? mentionedLead.id : null });
+    renderChatHistory();
+  } catch (error) {
+    pending.textContent = `Could not get an answer from the agent backend: ${error.message}`;
+    document.getElementById('chat-analysis').hidden = true;
+  } finally {
+    input.disabled = false;
+    sendButton.disabled = false;
+    input.focus();
+    document.getElementById('chat-main-scroll').scrollTop = document.getElementById('chat-main-scroll').scrollHeight;
+  }
+}
+
+function getChatReply(prompt, apiLeads, mentionedLead) {
+  const query = prompt.toLowerCase();
+  const coldLeads = apiLeads.filter(lead => lead.temp === 'cold' || lead.temp === 'frozen');
+  const priorityLeads = coldLeads
+    .sort((a, b) => b.daysSilent - a.daysSilent);
+  const recoveryQuestion = /\b(win\s+(?:back|them\s+back|(?:the\s+)?(?:lead|deal|contact|customer|agent)\s+back)|recover|re-engage|reengage|revive|save the deal|rescue|close the deal)\b/i.test(query);
+
+  if (mentionedLead) {
+    const previous = mentionedLead.priorColdContext
+      ? ` Previous H-MEM context from ${mentionedLead.priorColdContext.detectedAt}: ${mentionedLead.priorColdContext.reason} Suggested action: ${mentionedLead.priorColdContext.suggestedAction}.`
+      : '';
+    const recovery = formatRecoveryPlan(mentionedLead);
+    const intro = `${mentionedLead.name} at ${mentionedLead.company} is ${mentionedLead.daysSilent} days silent in ${mentionedLead.stage}. ${mentionedLead.reasoning}`;
+    return recoveryQuestion
+      ? `${intro}\n\n${recovery}${previous}`
+      : `${intro}\n\nHow to try to win them back:\n${recovery}\n\nAgent's next step: ${mentionedLead.nextAction}${previous}`;
+  }
+  if (recoveryQuestion) {
+    if (!priorityLeads.length) return 'The backend did not identify any cold or frozen leads to recover in this pipeline.';
+    const plans = priorityLeads.slice(0, 3)
+      .map(lead => `${lead.name} at ${lead.company}:\n${formatRecoveryPlan(lead)}`)
+      .join('\n\n');
+    return `Here are evidence-based recovery plans for the highest-priority cold or frozen leads. Start with one contact and tailor the message to their last concern:\n\n${plans}`;
+  }
+  if (query.includes('who') || query.includes('attention') || query.includes('today') || query.includes('priority')) {
+    const priorities = priorityLeads.slice(0, 3)
+      .map(lead => `${lead.name} (${lead.company}), ${lead.daysSilent} days silent`)
+      .join('\n');
+    return `Start with these ${priorityLeads.length} cold or frozen leads:\n${priorities}\nReview the drafts before sending.`;
+  }
+  if (query.includes('cold') || query.includes('silent') || query.includes('stalled')) {
+    const list = coldLeads.map(lead => `${lead.name} — ${lead.temp}, ${lead.daysSilent} days silent`)
+      .join('\n');
+    if (!priorityLeads.length) return 'The backend returned no cold or frozen leads for this pipeline.';
+    return `There are ${coldLeads.length} cold or frozen leads in the pipeline:\n${list}\nThe longest-silent lead is ${priorityLeads[0].name} at ${priorityLeads[0].company}.`;
+  }
+  if (query.includes('help') || query.includes('what can')) {
+    return 'I can explain a deal using analysis returned by the agent backend. Ask about a deal ID or contact name.';
+  }
+  return `The backend analyzed ${apiLeads.length} deal${apiLeads.length === 1 ? '' : 's'}. Ask about a contact name or a deal ID to see its evidence.`;
+}
+
+function formatRecoveryPlan(lead) {
+  const tags = lead.painTags || [];
+  const evidence = (lead.timeline || []).map(item => ({
+    ...item,
+    text: String(item.sub || '').replace(/\s+/g, ' ').trim(),
+  }));
+  const quoteFor = patterns => evidence.find(item => patterns.some(pattern => pattern.test(item.text)));
+  const cite = item => item
+    ? ` Evidence: ${item.title}${item.time ? ` (${item.time})` : ''} — “${item.text.slice(0, 180)}${item.text.length > 180 ? '…' : ''}”`
+    : '';
+  const steps = [];
+  const addStep = (text, patterns) => {
+    if (steps.length >= 2) return;
+    const item = patterns ? quoteFor(patterns) : null;
+    steps.push(`${steps.length + 1}. ${text}${cite(item)}`);
+  };
+  const recipes = [
+    {
+      tag: 'legal',
+      text: 'Unblock legal review: ask which clause or document is still open, offer a short call or a clear redline/Q&A, then agree on a follow-up date.',
+      patterns: [/\blegal\b|\bcontract\b|\bclause\b|\bredline\b/i],
+    },
+    {
+      tag: 'budget',
+      text: 'Clarify the approved budget and the outcome they need; offer a smaller scope or phased option before discussing a discount.',
+      patterns: [/\bbudget\b|\bprice\b|\bcost\b|\bdiscount\b/i],
+    },
+    {
+      tag: 'competitor',
+      text: 'Ask which criteria matter most in their comparison, then send a concise, evidence-backed comparison focused on those criteria.',
+      patterns: [/\bcompetitor\b|\bvendor\b|\bprovider\b|\balternative\b/i],
+    },
+    {
+      tag: 'integration',
+      text: 'Address the specific integration concern with a technical answer or a brief specialist call, and confirm what proof they need to proceed.',
+      patterns: [/\bintegrat\b|\bAPI\b|\bconnect\b/i],
+    },
+    {
+      tag: 'timing',
+      text: 'Confirm whether timing is the blocker and when the project could restart; offer a useful next step now and schedule a check-in for that date.',
+      patterns: [/\blater\b|\bdelay\b|\bnext quarter\b|\btiming\b|\bpostpon/i],
+    },
+    {
+      tag: 'no-response',
+      text: 'Send one brief, personal check-in tied to the last conversation, ask one easy-to-answer question, and offer two convenient times to talk.',
+      patterns: [/\bno response\b|\bno answer\b|\bvoicemail\b|\bfollow up\b/i],
+    },
+  ];
+  for (const recipe of recipes) {
+    if (tags.includes(recipe.tag)) addStep(recipe.text, recipe.patterns);
+  }
+  if (!steps.length && lead.confidence === 'LOW') {
+    addStep('Verify the missing details with the contact or CRM before assuming why the deal stalled; ask what would need to change for the project to move forward.');
+  }
+  if (!steps.length) {
+    addStep('Re-open the conversation with a short, personalized note about the last known priority and ask whether it is still active.');
+  }
+  if (steps.length < 2) {
+    addStep('Make a clear, low-pressure ask for the next step and agree on a specific follow-up date; if priorities have changed, ask permission to reconnect later.');
+  }
+  return `${steps.join('\n')}\nAvoid promising an outcome or sending repeated nudges; adapt to their reply and respect a request to pause.${lead.suggestion && lead.suggestion !== 'No recommendation' ? `\nAgent recommendation: ${lead.suggestion}` : ''}`;
+}
+
+function getMentionedChatLead(prompt, availableLeads) {
+  const query = prompt.toLowerCase();
+  return availableLeads.find(lead =>
+    (lead.name && query.includes(lead.name.toLowerCase())) ||
+    (lead.company && query.includes(lead.company.toLowerCase())) ||
+    (lead.id && query.includes(String(lead.id).toLowerCase()))
+  ) || null;
+}
+
+function getChatLead(prompt, availableLeads) {
+  const query = prompt.toLowerCase();
+  const mentionedLead = getMentionedChatLead(prompt, availableLeads);
+  if (mentionedLead) return mentionedLead;
+  if (['cold', 'silent', 'stalled', 'attention', 'priority', 'today'].some(term => query.includes(term))) {
+    return availableLeads.filter(lead => lead.temp === 'cold' || lead.temp === 'frozen')
+      .sort((a, b) => b.daysSilent - a.daysSilent)[0];
+  }
+  return null;
+}
+
+function createEvidenceCard(iconName, title, subtitle, copy, detail) {
+  const card = document.createElement('article');
+  card.className = 'chat-evidence-card';
+  const header = document.createElement('div');
+  header.className = 'chat-evidence-head';
+  const icon = document.createElement('div');
+  icon.className = 'chat-evidence-icon';
+  const iconElement = document.createElement('i');
+  iconElement.setAttribute('data-lucide', iconName);
+  iconElement.style.width = '15px';
+  iconElement.style.height = '15px';
+  icon.appendChild(iconElement);
+  const heading = document.createElement('div');
+  const headingTitle = document.createElement('div');
+  headingTitle.className = 'chat-evidence-title';
+  headingTitle.textContent = title;
+  const headingSubtitle = document.createElement('div');
+  headingSubtitle.className = 'chat-evidence-subtitle';
+  headingSubtitle.textContent = subtitle;
+  heading.append(headingTitle, headingSubtitle);
+  header.append(icon, heading);
+  const body = document.createElement('div');
+  body.className = 'chat-evidence-copy';
+  body.textContent = copy;
+  const tag = document.createElement('span');
+  tag.className = 'chat-confidence';
+  tag.textContent = detail;
+  card.append(header, body, tag);
+  return card;
+}
+
+function renderChatAnalysis(lead) {
+  const evidence = document.getElementById('chat-evidence');
+  const agentSignal = lead.priorColdContext
+    ? `${lead.reasoning}\nPrior H-MEM context: ${lead.priorColdContext.reason} Suggested action: ${lead.priorColdContext.suggestedAction}`
+    : lead.reasoning;
+  evidence.replaceChildren(
+    createEvidenceCard('briefcase-business', 'Deal record', `${lead.stage} · ${lead.value}`, `${lead.name} at ${lead.company} is currently in the ${lead.stage.toLowerCase()} stage.`, 'CRM · Lead record'),
+    createEvidenceCard('clock-3', 'Engagement gap', `Last contact · ${lead.lastContact}`, `${lead.daysSilent} days without a response. ${lead.timeline[0] ? lead.timeline[0].title : 'No recent interaction recorded.'}`, 'CRM · Activity timeline'),
+    createEvidenceCard('brain', 'Agent signal', `${lead.temp.charAt(0).toUpperCase() + lead.temp.slice(1)} lead · ${lead.agentStatus}`, agentSignal, `Next action: ${lead.nextAction}`)
+  );
+
+  document.getElementById('chat-evidence-count').textContent = `3 signals · ${lead.name}`;
+  document.getElementById('chat-relationship-title').textContent = `${lead.name} relationship & touchpoints`;
+  document.getElementById('chat-relationship-chip').textContent = `${lead.company} · ${lead.value}`;
+  const flow = document.getElementById('chat-flow');
+  flow.replaceChildren();
+  const nodes = [
+    ['Lead', lead.name, lead.company],
+    ['Deal stage', lead.stage, lead.value],
+    ['Last touch', lead.lastContact, `${lead.daysSilent} days silent`],
+    ['Temperature', lead.temp.charAt(0).toUpperCase() + lead.temp.slice(1), `Next action: ${lead.nextAction}`],
+  ];
+  nodes.forEach((node, index) => {
+    if (index > 0) {
+      const connector = document.createElement('span');
+      connector.className = 'chat-flow-link';
+      connector.textContent = '→';
+      flow.appendChild(connector);
+    }
+    const item = document.createElement('div');
+    item.className = 'chat-flow-node';
+    const kind = document.createElement('div');
+    kind.className = 'chat-flow-kind';
+    kind.textContent = node[0];
+    const value = document.createElement('div');
+    value.className = 'chat-flow-value';
+    value.textContent = node[1];
+    const detail = document.createElement('div');
+    detail.className = 'chat-flow-detail';
+    detail.textContent = node[2];
+    item.append(kind, value, detail);
+    flow.appendChild(item);
+  });
+
+  const audit = document.getElementById('chat-audit-list');
+  audit.replaceChildren();
+  lead.timeline.forEach(event => {
+    const item = document.createElement('li');
+    item.className = 'chat-audit-item';
+    item.textContent = event.title;
+    const time = document.createElement('span');
+    time.className = 'chat-audit-time';
+    time.textContent = `${event.time} · ${event.sub}`;
+    item.appendChild(time);
+    audit.appendChild(item);
+  });
+  document.getElementById('chat-audit').hidden = true;
+  document.getElementById('chat-audit-button').querySelector('span').textContent = 'Show interaction timeline';
+  document.getElementById('chat-analysis').hidden = false;
+  lucide.createIcons();
+}
+
+function toggleChatAudit() {
+  const audit = document.getElementById('chat-audit');
+  audit.hidden = !audit.hidden;
+  document.querySelector('#chat-audit-button span').textContent = audit.hidden ? 'Show interaction timeline' : 'Hide interaction timeline';
+}
+
+function loadChatHistory() {
+  if (chatHistory.length === 0) return;
+  const latest = chatHistory[chatHistory.length - 1];
+  loadChatConversation(latest.question, latest.leadId);
+}
+
+function loadChatConversation(question, leadId) {
+  document.getElementById('chat-messages').replaceChildren();
+  appendChatMessage('user', question);
+  const pending = appendChatMessage('assistant', 'Checking the agent backend…');
+  document.getElementById('chat-analysis').hidden = true;
+  runAgentApi(leadId || 'all', true).then(result => {
+    const apiLeads = result.rows.map(mapDeal);
+    const mentionedLead = getMentionedChatLead(question, apiLeads);
+    const lead = mentionedLead || getChatLead(question, apiLeads);
+    pending.textContent = getChatReply(question, apiLeads, mentionedLead);
+    if (lead) renderChatAnalysis(lead);
+  }).catch(error => {
+    pending.textContent = `Could not get an answer from the agent backend: ${error.message}`;
+  });
+  document.getElementById('chat-main-scroll').scrollTop = 0;
+}
+
+function renderChatHistory() {
+  const list = document.getElementById('chat-history-list');
+  list.replaceChildren();
+  chatHistory.slice(-5).reverse().forEach(entry => {
+    const button = document.createElement('button');
+    button.className = 'chat-history-item';
+    button.type = 'button';
+    button.textContent = entry.question;
+    button.addEventListener('click', () => loadChatConversation(entry.question, entry.leadId));
+    list.appendChild(button);
+  });
+}
+
+function startNewChat() {
+  document.getElementById('chat-messages').replaceChildren();
+  document.getElementById('chat-analysis').hidden = true;
+  document.getElementById('chat-audit').hidden = true;
+  document.getElementById('chat-input').focus();
+  document.getElementById('chat-main-scroll').scrollTop = 0;
+}
+
+function selectTone(btn) {
+  document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  showToast('Tone updated to ' + btn.textContent);
+}
+
+function initChart() {
+  const canvas = document.getElementById('tempChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  const counts = ['hot','warm','cold','frozen'].map(name => leads.filter(lead => lead.temp === name).length);
+  if (tempChart) {
+    tempChart.data.datasets[0].data = counts;
+    tempChart.update();
+    return;
+  }
+  const ctx = canvas.getContext('2d');
+  tempChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Hot','Warm','Cold','Frozen'],
+      datasets: [{ data: counts, backgroundColor:['#22c55e','#eab308','#f97316','#6366f1'], borderWidth:0, hoverOffset:6 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'72%',
+      plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw} leads` } } }
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  loadPipeline();
+  document.getElementById('chat-input').addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      document.querySelector('.chat-form').requestSubmit();
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') toggleChat(false);
+  });
+});
+</script>
+</body>
+</html>

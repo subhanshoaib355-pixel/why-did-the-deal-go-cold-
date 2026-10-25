@@ -1,0 +1,23 @@
+{
+  "use_case_id": 18,
+  "title": "Customer Experience Intelligence",
+  "agents": [
+    "Feedback Aggregator",
+    "Sentiment Agent",
+    "Journey Mapper",
+    "Pain Detector",
+    "Recommender"
+  ],
+  "tools_used": ["compass-api", "zetaris"],
+  "data_sources": [
+    "dealtrace_crm.deals",
+    "contact.contact",
+    "emails.emails",
+    "call_note.call_note",
+    "data/deals.json",
+    "data/contacts.json",
+    "data/emails.json",
+    "data/call_notes.json"
+  ],
+  "output_type": "dashboard"
+}

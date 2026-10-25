@@ -1,0 +1,82 @@
+[
+  {
+    "stage": "Proposal Sent",
+    "last_activity_date": "2026-08-22",
+    "company_name": "Example Company 01",
+    "created_date": "2026-08-01",
+    "deal_value": "18000",
+    "status": "open",
+    "contact_id": "C001",
+    "deal_id": "D001"
+  },
+  {
+    "stage": "Negotiation",
+    "last_activity_date": "2026-08-28",
+    "company_name": "Example Company 02",
+    "created_date": "2026-08-05",
+    "deal_value": "9500",
+    "status": "open",
+    "contact_id": "C002",
+    "deal_id": "D002"
+  },
+  {
+    "stage": "Negotiation",
+    "last_activity_date": "2026-09-02",
+    "company_name": "Example Company 03",
+    "created_date": "2026-08-10",
+    "deal_value": "25000",
+    "status": "open",
+    "contact_id": "C003",
+    "deal_id": "D003"
+  },
+  {
+    "stage": "Proposal Sent",
+    "last_activity_date": "2026-07-30",
+    "company_name": "Example Company 04",
+    "created_date": "2026-07-15",
+    "deal_value": "14000",
+    "status": "lost",
+    "contact_id": "C004",
+    "deal_id": "D004"
+  },
+  {
+    "stage": "Qualified",
+    "last_activity_date": "2026-08-14",
+    "company_name": "Example Company 05",
+    "created_date": "2026-08-12",
+    "deal_value": "6000",
+    "status": "open",
+    "contact_id": "C005",
+    "deal_id": "D005"
+  },
+  {
+    "stage": "Proposal Sent",
+    "last_activity_date": "2026-09-05",
+    "company_name": "Example Company 06",
+    "created_date": "2026-07-20",
+    "deal_value": "32000",
+    "status": "open",
+    "contact_id": "C006",
+    "deal_id": "D006"
+  },
+  {
+    "stage": "Closed",
+    "last_activity_date": "2026-07-25",
+    "company_name": "Example Company 07",
+    "created_date": "2026-07-01",
+    "deal_value": "11000",
+    "status": "won",
+    "contact_id": "C007",
+    "deal_id": "D007"
+  },
+  {
+    "stage": "Negotiation",
+    "last_activity_date": "2026-08-20",
+    "company_name": "Example Company 08",
+    "created_date": "2026-08-18",
+    "deal_value": "19500",
+    "status": "open",
+    "contact_id": "C008",
+    "deal_id": "D008"
+  }
+]
